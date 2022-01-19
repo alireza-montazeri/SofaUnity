@@ -26,23 +26,23 @@
 
 extern "C"
 {
-	SOFA_UNITY_EXPORT SofaPhysicsAPI* createAPI()
+	SOFA_UNITY_EXPORT SofaPhysicsAPI *createAPI()
 	{
 		return new SofaPhysicsAPI(false, 0);
 	}
 
-	SOFA_UNITY_EXPORT const char *APIName(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT const char *APIName(SofaPhysicsAPI *instance)
 	{
 		return instance->APIName();
 	}
 
 	/// Load an XML file containing the main scene description
-	SOFA_UNITY_EXPORT bool load(SofaPhysicsAPI* instance, const char *filename)
+	SOFA_UNITY_EXPORT bool load(SofaPhysicsAPI *instance, const char *filename)
 	{
 		return instance->load(filename);
 	}
 
-	SOFA_UNITY_EXPORT void createScene(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void createScene(SofaPhysicsAPI *instance)
 	{
 		instance->createScene();
 	}
@@ -50,44 +50,44 @@ extern "C"
 	/// Start the simulation
 	/// Currently this simply sets the animated flag to true, but this might
 	/// start a separate computation thread in a future version
-	SOFA_UNITY_EXPORT void start(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void start(SofaPhysicsAPI *instance)
 	{
 		instance->start();
 	}
 
 	/// Stop/pause the simulation
-	SOFA_UNITY_EXPORT void stop(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void stop(SofaPhysicsAPI *instance)
 	{
 		instance->stop();
 	}
 
 	/// Compute one simulation time-step
-	SOFA_UNITY_EXPORT void step(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void step(SofaPhysicsAPI *instance)
 	{
 		instance->step();
 	}
 
 	/// Reset the simulation to its initial state
-	SOFA_UNITY_EXPORT void reset(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void reset(SofaPhysicsAPI *instance)
 	{
 		instance->reset();
 	}
 
 	/// Send an event to the simulation for custom controls
 	/// (such as switching active instrument)
-	SOFA_UNITY_EXPORT void sendValue(SofaPhysicsAPI* instance, const char *name, double value)
+	SOFA_UNITY_EXPORT void sendValue(SofaPhysicsAPI *instance, const char *name, double value)
 	{
 		instance->sendValue(name, value);
 	}
 
 	/// Reset the camera to its default position
-	SOFA_UNITY_EXPORT void resetView(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void resetView(SofaPhysicsAPI *instance)
 	{
 		instance->resetView();
 	}
 
 	/// Render the scene using OpenGL
-	SOFA_UNITY_EXPORT void drawGL(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT void drawGL(SofaPhysicsAPI *instance)
 	{
 		instance->drawGL();
 	}
@@ -95,46 +95,53 @@ extern "C"
 	/// Return true if the simulation is running
 	/// Note that currently you must call the step() method
 	/// periodically to actually animate the scene
-	SOFA_UNITY_EXPORT bool isAnimated(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT bool isAnimated(SofaPhysicsAPI *instance)
 	{
 		return instance->isAnimated();
 	}
 
 	/// Set the animated state to a given value (requires a
 	/// simulation to be loaded)
-	SOFA_UNITY_EXPORT void setAnimated(SofaPhysicsAPI* instance, bool val)
+	SOFA_UNITY_EXPORT void setAnimated(SofaPhysicsAPI *instance, bool val)
 	{
 		instance->setAnimated(val);
 	}
 
 	/// Return the main simulation file name (from the last
 	/// call to load())
-	SOFA_UNITY_EXPORT const char *getSceneFileName(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT const char *getSceneFileName(SofaPhysicsAPI *instance)
 	{
 		return instance->getSceneFileName();
 	}
 
 	/// Return the current time-step (or 0 if no simulation
 	/// is loaded)
-	SOFA_UNITY_EXPORT double getTimeStep(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT double getTimeStep(SofaPhysicsAPI *instance)
 	{
 		return instance->getTimeStep();
 	}
 
 	/// Control the timestep of the simulation (requires a
 	/// simulation to be loaded)
-	SOFA_UNITY_EXPORT void setTimeStep(SofaPhysicsAPI* instance, double dt)
+	SOFA_UNITY_EXPORT void setTimeStep(SofaPhysicsAPI *instance, double dt)
 	{
 		instance->setTimeStep(dt);
 	}
 
+	/// Return the current computation speed (averaged over
+	/// the last 100 steps)
+	SOFA_UNITY_EXPORT double getCurrentFPS(SofaPhysicsAPI *instance)
+	{
+		return instance->getCurrentFPS();
+	}
+
 	/// Return the number of currently active output meshes
-	SOFA_UNITY_EXPORT unsigned int getNbOutputMeshes(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT unsigned int getNbOutputMeshes(SofaPhysicsAPI *instance)
 	{
 		return instance->getNbOutputMeshes();
 	}
 
-	SOFA_UNITY_EXPORT unsigned int getNbVertices(SofaPhysicsAPI* instance)
+	SOFA_UNITY_EXPORT unsigned int getNbVertices(SofaPhysicsAPI *instance)
 	{
 		unsigned int nbMehses = instance->getNbOutputMeshes();
 		return 0;
