@@ -24,37 +24,28 @@
 
 #define SOFA_UNITY_EXPORT __declspec(dllexport)
 
-#include <SofaPhysicsAPI/SofaPhysicsAPI.h>
-
 extern "C"
 {
-    SOFA_UNITY_EXPORT SofaPhysicsAPI *createAPI();
-    SOFA_UNITY_EXPORT const char *APIName(SofaPhysicsAPI *instance);
+    SOFA_UNITY_EXPORT void createSofaUnityAPI();
+    SOFA_UNITY_EXPORT const char *APIName();
 
-    SOFA_UNITY_EXPORT bool load(SofaPhysicsAPI *instance, const char *filename);
-    SOFA_UNITY_EXPORT void createScene(SofaPhysicsAPI *instance);
+    SOFA_UNITY_EXPORT bool load(const char *cfilename);
+    void updateOutputMeshes();
 
-    SOFA_UNITY_EXPORT void start(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void stop(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void step(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void reset(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void resetView(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void sendValue(SofaPhysicsAPI *instance, const char *name, double value);
-    SOFA_UNITY_EXPORT void drawGL(SofaPhysicsAPI *instance);
+    SOFA_UNITY_EXPORT double getTimeStep();
+    SOFA_UNITY_EXPORT void setTimeStep(double dt);
 
-    SOFA_UNITY_EXPORT double getCurrentFPS(SofaPhysicsAPI *instance);
+    SOFA_UNITY_EXPORT double getTime();
+    SOFA_UNITY_EXPORT double getCurrentFPS();
 
-    SOFA_UNITY_EXPORT unsigned int getNbOutputMeshes(SofaPhysicsAPI *instance);
+    SOFA_UNITY_EXPORT double *getGravity();
+    SOFA_UNITY_EXPORT void setGravity(double *gravity);
 
-    SOFA_UNITY_EXPORT bool isAnimated(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void setAnimated(SofaPhysicsAPI *instance, bool val);
+    SOFA_UNITY_EXPORT void step();
 
-    SOFA_UNITY_EXPORT double getTimeStep(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void setTimeStep(SofaPhysicsAPI *instance, double dt);
-    SOFA_UNITY_EXPORT double getTime(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT double getCurrentFPS(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT double *getGravity(SofaPhysicsAPI *instance);
-    SOFA_UNITY_EXPORT void setGravity(SofaPhysicsAPI *instance, double *gravity);
+    SOFA_UNITY_EXPORT unsigned int getNbMeshes();
+    SOFA_UNITY_EXPORT unsigned int getNbMeshVertices(int mIndex);
+    SOFA_UNITY_EXPORT int getMeshVPositions(float *vPositions, int mIndex);
 }
 
 #endif // SOFA_TEARPLUGIN_H

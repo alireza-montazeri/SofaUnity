@@ -24,126 +24,276 @@
 
 #include <UnityPlugin.h>
 
+#include <sofa/gl/gl.h>
+#include <sofa/gl/glu.h>
+#include <sofa/helper/io/Image.h>
+#include <sofa/gl/RAII.h>
+
+#include <sofa/helper/system/FileRepository.h>
+#include <sofa/helper/system/SetDirectory.h>
+#include <sofa/helper/system/PluginManager.h>
+#include <sofa/helper/BackTrace.h>
+#include <sofa/core/ObjectFactory.h>
+#include <sofa/core/objectmodel/GUIEvent.h>
+
+#include <SofaSimulationGraph/DAGSimulation.h>
+
+#include <sofa/gui/GUIManager.h>
+#include <SofaGui/initSofaGui.h>
+#include <sofa/helper/init.h>
+
+#include <sofa/gui/BaseGUI.h>
+#include "SofaPhysicsAPI/fakegui.h"
+
+#include <sofa/type/Vec.h>
+
+#include <cmath>
+#include <iostream>
+
+#include <SceneCreator/SceneCreator.h>
+
+#include <SofaBoundaryCondition/initSofaBoundaryCondition.h>
+#include <SofaConstraint/initSofaConstraint.h>
+#include <SofaGeneralAnimationLoop/initSofaGeneralAnimationLoop.h>
+#include <SofaGeneralDeformable/initSofaGeneralDeformable.h>
+#include <SofaGeneralEngine/initSofaGeneralEngine.h>
+#include <SofaGeneralExplicitOdeSolver/initSofaGeneralExplicitOdeSolver.h>
+#include <SofaGeneralImplicitOdeSolver/initSofaGeneralImplicitOdeSolver.h>
+#include <SofaGeneralLinearSolver/initSofaGeneralLinearSolver.h>
+#include <SofaGeneralLoader/initSofaGeneralLoader.h>
+#include <SofaGeneralMeshCollision/initSofaGeneralMeshCollision.h>
+#include <SofaGeneralObjectInteraction/initSofaGeneralObjectInteraction.h>
+#include <SofaGeneralRigid/initSofaGeneralRigid.h>
+#include <SofaGeneralSimpleFem/initSofaGeneralSimpleFem.h>
+#include <SofaGeneralTopology/initSofaGeneralTopology.h>
+#include <SofaGeneralVisual/initSofaGeneralVisual.h>
+#include <SofaGraphComponent/initSofaGraphComponent.h>
+#include <SofaTopologyMapping/initSofaTopologyMapping.h>
+#include <SofaUserInteraction/initSofaUserInteraction.h>
+#include <SofaOpenglVisual/OglModel.h>
+
+#include <SofaSimulationGraph/init.h>
+#include <SofaSimulationCommon/init.h>
+
+#include <sofa/helper/system/thread/CTime.h>
+
+static sofa::core::ObjectFactory::ClassEntry::SPtr classVisualModel;
+sofa::simulation::Simulation *m_Simulation;
+sofa::simulation::Node::SPtr m_RootNode;
+std::string sceneFileName;
+
+sofa::helper::system::thread::ctime_t stepTime[10];
+sofa::helper::system::thread::ctime_t timeTicks;
+sofa::helper::system::thread::ctime_t lastRedrawTime;
+int frameCounter;
+double currentFPS;
+
+std::vector<sofa::component::visualmodel::OglModel *> outputMeshes;
+
 extern "C"
 {
-	SOFA_UNITY_EXPORT SofaPhysicsAPI *createAPI()
+	SOFA_UNITY_EXPORT void createSofaUnityAPI()
 	{
-		return new SofaPhysicsAPI(false, 0);
+		sofa::helper::init();
+		sofa::simulation::common::init();
+		sofa::simulation::graph::init();
+
+		sofa::gui::GUIManager::Init(nullptr, "fake");
+		sofa::gui::GUIManager::createGUI(NULL, NULL);
+
+		m_Simulation = new sofa::simulation::graph::DAGSimulation();
+		sofa::simulation::setSimulation(m_Simulation);
+
+		sofa::component::initSofaBoundaryCondition();
+		sofa::component::initSofaConstraint();
+		sofa::component::initSofaGeneralAnimationLoop();
+		sofa::component::initSofaGeneralDeformable();
+		sofa::component::initSofaGeneralEngine();
+		sofa::component::initSofaGeneralExplicitOdeSolver();
+		sofa::component::initSofaGeneralImplicitOdeSolver();
+		sofa::component::initSofaGeneralLinearSolver();
+		sofa::component::initSofaGeneralLoader();
+		sofa::component::initSofaGeneralMeshCollision();
+		sofa::component::initSofaGeneralObjectInteraction();
+		sofa::component::initSofaGeneralRigid();
+		sofa::component::initSofaGeneralSimpleFem();
+		sofa::component::initSofaGeneralTopology();
+		sofa::component::initSofaGeneralVisual();
+		sofa::component::initSofaGraphComponent();
+		sofa::component::initSofaTopologyMapping();
+		sofa::component::initSofaUserInteraction();
+
+		// sofa::core::ObjectFactory::AddAlias("VisualModel", "OglModel", true,
+		// 									&classVisualModel);
+
+		sofa::helper::system::PluginManager::getInstance().init();
+
+		timeTicks = sofa::helper::system::thread::CTime::getRefTicksPerSec();
+		frameCounter = 0;
+		currentFPS = 0.0;
+		lastRedrawTime = 0;
 	}
 
-	SOFA_UNITY_EXPORT const char *APIName(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT const char *APIName()
 	{
-		return instance->APIName();
+		return "SofaUnity API";
 	}
 
-	/// Load an XML file containing the main scene description
-	SOFA_UNITY_EXPORT bool load(SofaPhysicsAPI *instance, const char *filename)
+	SOFA_UNITY_EXPORT bool load(const char *cfilename)
 	{
-		return instance->load(filename);
+		std::string filename = cfilename;
+		std::cout << "FROM APP: SofaUnity load(" << filename << ")" << std::endl;
+		sofa::helper::BackTrace::autodump();
+
+		bool success = true;
+		sofa::helper::system::DataRepository.findFile(filename);
+		m_RootNode = m_Simulation->load(filename.c_str());
+		if (m_RootNode.get())
+		{
+			sceneFileName = filename;
+			m_Simulation->init(m_RootNode.get());
+			updateOutputMeshes();
+		}
+		else
+		{
+			std::cerr << "Error: can't get m_RootNode" << std::endl;
+			success = false;
+		}
+		lastRedrawTime = sofa::helper::system::thread::CTime::getRefTime();
+		return success;
 	}
 
-	SOFA_UNITY_EXPORT void createScene(SofaPhysicsAPI *instance)
+	void updateOutputMeshes()
 	{
-		instance->createScene();
+		outputMeshes.clear();
+
+		// Get list of all 3D models
+		m_RootNode->getTreeObjects<sofa::component::visualmodel::OglModel>(&outputMeshes);
 	}
 
-	/// Start the simulation
-	/// Currently this simply sets the animated flag to true, but this might
-	/// start a separate computation thread in a future version
-	SOFA_UNITY_EXPORT void start(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT double getTimeStep()
 	{
-		instance->start();
+		if (m_RootNode.get())
+			return m_RootNode.get()->getContext()->getDt();
+		else
+			return 0.0;
 	}
 
-	/// Stop/pause the simulation
-	SOFA_UNITY_EXPORT void stop(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT void setTimeStep(double dt)
 	{
-		instance->stop();
+		if (m_RootNode.get())
+		{
+			m_RootNode.get()->getContext()->setDt(dt);
+		}
 	}
 
-	/// Compute one simulation time-step
-	SOFA_UNITY_EXPORT void step(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT double getTime()
 	{
-		instance->step();
+		if (m_RootNode.get())
+			return m_RootNode.get()->getContext()->getTime();
+		else
+			return 0.0;
 	}
 
-	/// Reset the simulation to its initial state
-	SOFA_UNITY_EXPORT void reset(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT double getCurrentFPS()
 	{
-		instance->reset();
+		return currentFPS;
 	}
 
-	/// Send an event to the simulation for custom controls
-	/// (such as switching active instrument)
-	SOFA_UNITY_EXPORT void sendValue(SofaPhysicsAPI *instance, const char *name, double value)
+	SOFA_UNITY_EXPORT double *getGravity()
 	{
-		instance->sendValue(name, value);
+		double *gravityVec = new double[3];
+
+		if (m_RootNode.get())
+		{
+			const auto &g = m_RootNode.get()->getContext()->getGravity();
+			gravityVec[0] = g.x();
+			gravityVec[1] = g.y();
+			gravityVec[2] = g.z();
+		}
+
+		return gravityVec;
 	}
 
-	/// Reset the camera to its default position
-	SOFA_UNITY_EXPORT void resetView(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT void setGravity(double *gravity)
 	{
-		instance->resetView();
+		const auto &g = sofa::type::Vec3d(gravity[0], gravity[1], gravity[2]);
+		m_RootNode.get()->getContext()->setGravity(g);
 	}
 
-	/// Render the scene using OpenGL
-	SOFA_UNITY_EXPORT void drawGL(SofaPhysicsAPI *instance)
+	void updateCurrentFPS()
 	{
-		instance->drawGL();
+		if (frameCounter == 0)
+		{
+			sofa::helper::system::thread::ctime_t t = sofa::helper::system::thread::CTime::getRefTime();
+			for (int i = 0; i < 10; i++)
+				stepTime[i] = t;
+		}
+		else
+		{
+			if ((frameCounter % 10) == 0)
+			{
+				sofa::helper::system::thread::ctime_t curtime = sofa::helper::system::thread::CTime::getRefTime();
+				int i = ((frameCounter / 10) % 10);
+				currentFPS = ((double)timeTicks / (curtime - stepTime[i])) * (frameCounter < 100 ? frameCounter : 100);
+				stepTime[i] = curtime;
+			}
+		}
+		++frameCounter;
 	}
 
-	/// Return true if the simulation is running
-	/// Note that currently you must call the step() method
-	/// periodically to actually animate the scene
-	SOFA_UNITY_EXPORT bool isAnimated(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT void step()
 	{
-		return instance->isAnimated();
+		sofa::simulation::Node *groot = m_RootNode.get();
+		if (!groot)
+			return;
+		/* Begin Step */
+		m_Simulation->animate(groot);
+		m_Simulation->updateVisual(groot);
+
+		/* End Step */
+		updateCurrentFPS();
+		updateOutputMeshes();
 	}
 
-	/// Set the animated state to a given value (requires a
-	/// simulation to be loaded)
-	SOFA_UNITY_EXPORT void setAnimated(SofaPhysicsAPI *instance, bool val)
+	SOFA_UNITY_EXPORT unsigned int getNbMeshes()
 	{
-		instance->setAnimated(val);
+		return (unsigned int)outputMeshes.size();
 	}
 
-	/// Return the main simulation file name (from the last
-	/// call to load())
-	SOFA_UNITY_EXPORT const char *getSceneFileName(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT unsigned int getNbMeshVertices(int mIndex)
 	{
-		return instance->getSceneFileName();
+		if (mIndex >= outputMeshes.size())
+			return 0;
+
+		return (unsigned int)outputMeshes[mIndex]->getVertices().size();
 	}
 
-	/// Return the current time-step (or 0 if no simulation
-	/// is loaded)
-	SOFA_UNITY_EXPORT double getTimeStep(SofaPhysicsAPI *instance)
+	SOFA_UNITY_EXPORT int getMeshVPositions(float *vPositions, int mIndex)
 	{
-		return instance->getTimeStep();
-	}
+		// Get array of vertices from sofa
+		sofa::component::visualmodel::VisualModelImpl::VecCoord meshVPositions = outputMeshes[mIndex]->getVertices();
 
-	/// Control the timestep of the simulation (requires a
-	/// simulation to be loaded)
-	SOFA_UNITY_EXPORT void setTimeStep(SofaPhysicsAPI *instance, double dt)
-	{
-		instance->setTimeStep(dt);
-	}
+		unsigned int nbVertices = (unsigned int)meshVPositions.size();
+		unsigned int length = 3 * nbVertices;
 
-	/// Return the current computation speed (averaged over
-	/// the last 100 steps)
-	SOFA_UNITY_EXPORT double getCurrentFPS(SofaPhysicsAPI *instance)
-	{
-		return instance->getCurrentFPS();
-	}
+		for (unsigned int i = 0; i < nbVertices; ++i)
+		{
+			vPositions[3 * i] = (float)meshVPositions[i].x();
+			vPositions[3 * i + 1] = (float)meshVPositions[i].y();
+			vPositions[3 * i + 2] = (float)meshVPositions[i].z();
+		}
 
-	/// Return the number of currently active output meshes
-	SOFA_UNITY_EXPORT unsigned int getNbOutputMeshes(SofaPhysicsAPI *instance)
-	{
-		return instance->getNbOutputMeshes();
-	}
-
-	SOFA_UNITY_EXPORT unsigned int getNbVertices(SofaPhysicsAPI *instance)
-	{
-		unsigned int nbMehses = instance->getNbOutputMeshes();
 		return 0;
+	}
+
+	SOFA_UNITY_EXPORT unsigned int getNbMeshTriangles(int mIndex)
+	{
+		unsigned int nbTriangles = 0;
+		if (mIndex >= outputMeshes.size())
+			return 0;
+		nbTriangles = (unsigned int)outputMeshes[mIndex]->getTriangles().size() + 2 * (unsigned int)outputMeshes[mIndex]->getQuads().size();
+
+		return nbTriangles;
 	}
 }
