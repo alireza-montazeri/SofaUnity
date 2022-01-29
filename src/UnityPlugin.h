@@ -22,30 +22,34 @@
 #ifndef SOFA_UNITYPLUGIN_H
 #define SOFA_UNITYPLUGIN_H
 
-#define SOFA_UNITY_EXPORT __declspec(dllexport)
+#define SOFA_UNITY_EXPORT extern "C" __declspec(dllexport)
 
-extern "C"
-{
-    SOFA_UNITY_EXPORT void createSofaUnityAPI();
-    SOFA_UNITY_EXPORT const char *APIName();
+SOFA_UNITY_EXPORT int createSofaUnityAPI(const char *sofaDir);
+SOFA_UNITY_EXPORT const char *APIName();
 
-    SOFA_UNITY_EXPORT bool load(const char *cfilename);
-    void updateOutputMeshes();
+SOFA_UNITY_EXPORT int load(const char *cfilename);
+void updateOutputMeshes();
 
-    SOFA_UNITY_EXPORT double getTimeStep();
-    SOFA_UNITY_EXPORT void setTimeStep(double dt);
+SOFA_UNITY_EXPORT double getTimeStep();
+SOFA_UNITY_EXPORT void setTimeStep(double dt);
 
-    SOFA_UNITY_EXPORT double getTime();
-    SOFA_UNITY_EXPORT double getCurrentFPS();
+SOFA_UNITY_EXPORT double getTime();
+SOFA_UNITY_EXPORT double getCurrentFPS();
 
-    SOFA_UNITY_EXPORT double *getGravity();
-    SOFA_UNITY_EXPORT void setGravity(double *gravity);
+SOFA_UNITY_EXPORT double *getGravity();
+SOFA_UNITY_EXPORT void setGravity(double *gravity);
 
-    SOFA_UNITY_EXPORT void step();
+SOFA_UNITY_EXPORT void step();
 
-    SOFA_UNITY_EXPORT unsigned int getNbMeshes();
-    SOFA_UNITY_EXPORT unsigned int getNbMeshVertices(int mIndex);
-    SOFA_UNITY_EXPORT int getMeshVPositions(float *vPositions, int mIndex);
-}
+SOFA_UNITY_EXPORT unsigned int getNbMeshes();
+SOFA_UNITY_EXPORT unsigned int getNbMeshVertices(int mIndex);
+SOFA_UNITY_EXPORT int getMeshVPositions(float *&vPositions, int mIndex);
+SOFA_UNITY_EXPORT unsigned int getNbMeshTriangles(int mIndex);
+SOFA_UNITY_EXPORT int getMeshTriangles(int *&triangles, int mIndex);
+SOFA_UNITY_EXPORT int getMeshTranslation(float *&translation, int mIndex);
+SOFA_UNITY_EXPORT int getMeshRotation(float *&rotation, int mIndex);
+SOFA_UNITY_EXPORT int getMeshScale(float *&scale, int mIndex);
 
-#endif // SOFA_TEARPLUGIN_H
+SOFA_UNITY_EXPORT int getMeshColor(float *&color, int mIndex);
+
+#endif // SOFA_UNITYPLUGIN_H
