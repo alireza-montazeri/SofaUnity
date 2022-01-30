@@ -157,10 +157,7 @@ SOFA_UNITY_EXPORT int load(const char *cfilename)
 	sofa::helper::system::DataRepository.addFirstPath(dir);
 	sofa::helper::system::DataRepository.findFile(name);
 
-	std::ofstream logFile;
-	logFile.open("E:/MasterProject/sofa/log.txt", std::ios::app);
-	logFile << name << std::endl;
-	logFile.close();
+	std::cout << name << std::endl;
 
 	m_RootNode = m_Simulation->load(name.c_str());
 	if (m_RootNode.get())
@@ -193,12 +190,14 @@ SOFA_UNITY_EXPORT double getTimeStep()
 		return 0.0;
 }
 
-SOFA_UNITY_EXPORT void setTimeStep(double dt)
+SOFA_UNITY_EXPORT int setTimeStep(double dt)
 {
 	if (m_RootNode.get())
 	{
 		m_RootNode.get()->getContext()->setDt(dt);
+		return 0;
 	}
+	return -1;
 }
 
 SOFA_UNITY_EXPORT double getTime()
@@ -214,25 +213,30 @@ SOFA_UNITY_EXPORT double getCurrentFPS()
 	return currentFPS;
 }
 
-SOFA_UNITY_EXPORT double *getGravity()
+SOFA_UNITY_EXPORT int getGravity(double *&gravity)
 {
-	double *gravityVec = new double[3];
-
 	if (m_RootNode.get())
 	{
 		const auto &g = m_RootNode.get()->getContext()->getGravity();
-		gravityVec[0] = g.x();
-		gravityVec[1] = g.y();
-		gravityVec[2] = g.z();
+		gravity[0] = g.x();
+		gravity[1] = g.y();
+		gravity[2] = g.z();
+
+		return 0;
 	}
 
-	return gravityVec;
+	return -1;
 }
 
-SOFA_UNITY_EXPORT void setGravity(double *gravity)
+SOFA_UNITY_EXPORT int setGravity(double *&gravity)
 {
-	const auto &g = sofa::type::Vec3d(gravity[0], gravity[1], gravity[2]);
-	m_RootNode.get()->getContext()->setGravity(g);
+	if (m_RootNode.get())
+	{
+		const auto &g = sofa::type::Vec3d(gravity[0], gravity[1], gravity[2]);
+		m_RootNode.get()->getContext()->setGravity(g);
+		return 0;
+	}
+	return -1;
 }
 
 void updateCurrentFPS()
@@ -268,6 +272,16 @@ SOFA_UNITY_EXPORT void step()
 	/* End Step */
 	updateCurrentFPS();
 	updateOutputMeshes();
+}
+
+SOFA_UNITY_EXPORT int finishSimulation()
+{
+	// Clean up Sofa simulation
+	sofa::helper::cleanup();
+	sofa::simulation::graph::cleanup();
+	sofa::simulation::common::cleanup();
+
+	return 0;
 }
 
 SOFA_UNITY_EXPORT unsigned int getNbMeshes()
@@ -373,6 +387,80 @@ SOFA_UNITY_EXPORT int getMeshScale(float *&scale, int mIndex)
 	return 0;
 }
 
+SOFA_UNITY_EXPORT unsigned int getNbMeshNormals(int mIndex)
+{
+	if (mIndex >= outputMeshes.size())
+		return 0;
+	return (unsigned int)outputMeshes[mIndex]->getVnormals().size();
+}
+
+SOFA_UNITY_EXPORT int getMeshNormals(float *&normals, int mIndex)
+{
+	// Get array of normals from sofa
+	sofa::component::visualmodel::VisualModelImpl::VecDeriv meshNormals = outputMeshes[mIndex]->getVnormals();
+
+	// Define and reserve space for std vector
+	unsigned int nbNormals = (unsigned int)meshNormals.size();
+
+	// Fill std vector
+	for (unsigned int i = 0; i < nbNormals; i++)
+	{
+		normals[3 * i] = (float)(meshNormals[i].x());
+		normals[3 * i + 1] = (float)(meshNormals[i].y());
+		normals[3 * i + 2] = (float)(meshNormals[i].z());
+	}
+	return 0;
+}
+
+SOFA_UNITY_EXPORT unsigned int getNbMeshTangents(int mIndex)
+{
+	if (mIndex >= outputMeshes.size())
+		return 0;
+	return (unsigned int)outputMeshes[mIndex]->getVtangents().size();
+}
+
+SOFA_UNITY_EXPORT int getMeshTangents(float *&tangents, int mIndex)
+{
+	// Get array of tangents from sofa
+	sofa::component::visualmodel::VisualModelImpl::VecCoord meshTangents = outputMeshes[mIndex]->getVtangents();
+
+	// Define and reserve space for std vector
+	unsigned int nbTangents = (unsigned int)meshTangents.size();
+
+	// Fill std vector
+	for (unsigned int i = 0; i < nbTangents; i++)
+	{
+		tangents[3 * i] = (float)meshTangents[i].x();
+		tangents[3 * i + 1] = (float)meshTangents[i].y();
+		tangents[3 * i + 2] = (float)meshTangents[i].z();
+	}
+	return 0;
+}
+
+SOFA_UNITY_EXPORT unsigned int getNbMeshTexCoords(int mIndex)
+{
+	if (mIndex >= outputMeshes.size())
+		return 0;
+	return (unsigned int)outputMeshes[mIndex]->getVtexcoords().size();
+}
+
+SOFA_UNITY_EXPORT int getMeshTexCoords(float *&coords, int mIndex)
+{
+	// Get array of texture coordinates from sofa
+	sofa::component::visualmodel::VisualModelImpl::VecTexCoord meshTexCoords = outputMeshes[mIndex]->getVtexcoords();
+
+	// Define and reserve space for std vector
+	unsigned int nbTexCoords = (unsigned int)meshTexCoords.size();
+
+	// Fill std vector
+	for (unsigned int i = 0; i < nbTexCoords; i++)
+	{
+		coords[2 * i] = meshTexCoords[i].x();
+		coords[2 * i + 1] = meshTexCoords[i].y();
+	}
+	return 0;
+}
+
 SOFA_UNITY_EXPORT int getMeshColor(float *&color, int mIndex)
 {
 	if (outputMeshes[mIndex]->material.getValue().useDiffuse)
@@ -383,6 +471,7 @@ SOFA_UNITY_EXPORT int getMeshColor(float *&color, int mIndex)
 		color[1] = rgba[1];
 		color[2] = rgba[2];
 		color[3] = rgba[3];
+		return 0;
 	}
 	else
 	{
@@ -391,5 +480,18 @@ SOFA_UNITY_EXPORT int getMeshColor(float *&color, int mIndex)
 		color[2] = 1;
 		color[3] = 1;
 	}
-	return 0;
+	return -1;
+}
+
+SOFA_UNITY_EXPORT int getMeshTexture(char *&textureName, int mIndex)
+{
+	if (outputMeshes[mIndex]->material.getValue().useTexture)
+	{
+		std::string strTexture_ = outputMeshes[mIndex]->material.getValue().textureFilename;
+
+		textureName = new char[strlen(strTexture_.c_str()) + 1];
+		strcpy_s(textureName, strlen(strTexture_.c_str()) + 1, strTexture_.c_str());
+		return 0;
+	}
+	return -1;
 }

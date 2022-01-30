@@ -31,25 +31,35 @@ SOFA_UNITY_EXPORT int load(const char *cfilename);
 void updateOutputMeshes();
 
 SOFA_UNITY_EXPORT double getTimeStep();
-SOFA_UNITY_EXPORT void setTimeStep(double dt);
+SOFA_UNITY_EXPORT int setTimeStep(double dt);
 
 SOFA_UNITY_EXPORT double getTime();
 SOFA_UNITY_EXPORT double getCurrentFPS();
 
-SOFA_UNITY_EXPORT double *getGravity();
-SOFA_UNITY_EXPORT void setGravity(double *gravity);
+SOFA_UNITY_EXPORT int getGravity(double *&gravity);
+SOFA_UNITY_EXPORT int setGravity(double *&gravity);
 
 SOFA_UNITY_EXPORT void step();
+SOFA_UNITY_EXPORT int finishSimulation();
 
 SOFA_UNITY_EXPORT unsigned int getNbMeshes();
 SOFA_UNITY_EXPORT unsigned int getNbMeshVertices(int mIndex);
 SOFA_UNITY_EXPORT int getMeshVPositions(float *&vPositions, int mIndex);
 SOFA_UNITY_EXPORT unsigned int getNbMeshTriangles(int mIndex);
 SOFA_UNITY_EXPORT int getMeshTriangles(int *&triangles, int mIndex);
+
 SOFA_UNITY_EXPORT int getMeshTranslation(float *&translation, int mIndex);
 SOFA_UNITY_EXPORT int getMeshRotation(float *&rotation, int mIndex);
 SOFA_UNITY_EXPORT int getMeshScale(float *&scale, int mIndex);
 
+SOFA_UNITY_EXPORT unsigned int getNbMeshNormals(int mIndex);
+SOFA_UNITY_EXPORT int getMeshNormals(float *&normals, int mIndex);
+SOFA_UNITY_EXPORT unsigned int getNbMeshTangents(int mIndex);
+SOFA_UNITY_EXPORT int getMeshTangents(float *&tangents, int mIndex);
+SOFA_UNITY_EXPORT unsigned int getNbMeshTexCoords(int mIndex);
+SOFA_UNITY_EXPORT int getMeshTexCoords(float *&coords, int mIndex);
+
 SOFA_UNITY_EXPORT int getMeshColor(float *&color, int mIndex);
+SOFA_UNITY_EXPORT int getMeshTexture(char *&textureName, int mIndex);
 
 #endif // SOFA_UNITYPLUGIN_H
