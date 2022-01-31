@@ -487,10 +487,10 @@ SOFA_UNITY_EXPORT int getMeshTexture(char *&textureName, int mIndex)
 {
 	if (outputMeshes[mIndex]->material.getValue().useTexture)
 	{
-		std::string strTexture_ = outputMeshes[mIndex]->material.getValue().textureFilename;
+		std::string strTexture = outputMeshes[mIndex]->material.getValue().textureFilename;
 
-		textureName = new char[strlen(strTexture_.c_str()) + 1];
-		strcpy_s(textureName, strlen(strTexture_.c_str()) + 1, strTexture_.c_str());
+		textureName = new char[strlen(strTexture.c_str()) + 1];
+		strcpy_s(textureName, strlen(strTexture.c_str()) + 1, strTexture.c_str());
 		return 0;
 	}
 	return -1;
