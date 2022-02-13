@@ -126,9 +126,9 @@ SOFA_UNITY_EXPORT int createSofaUnityAPI(const char *sofaDir)
 
 	std::string dir = sofaDir;
 	sofa::helper::system::PluginRepository.clear();
-	sofa::helper::system::PluginRepository.addFirstPath(dir + "/bin");
+	sofa::helper::system::PluginRepository.addFirstPath(dir + "/bin/Release");
 	sofa::helper::system::PluginRepository.addFirstPath(dir + "/plugins");
-	sofa::helper::system::PluginRepository.addFirstPath(dir + "/lib");
+	sofa::helper::system::PluginRepository.addFirstPath(dir + "/lib/Release");
 
 	timeTicks = sofa::helper::system::thread::CTime::getRefTicksPerSec();
 	frameCounter = 0;
